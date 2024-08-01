@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Page Title</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .container {
+            flex: 1;
+            padding: 2rem;
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        h2, h3 {
+            color: #343a40;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            color: #555;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        .error {
+            color: red;
+            font-size: 0.875rem;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 4px;
+            color: #fff;
+            text-align: center;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .btn-primary {
+            background-color: #007bff;
+        }
+
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+
+        .btn-danger {
+            background-color: #dc3545;
+        }
+
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+
+        .btn-success {
+            background-color: #28a745;
+        }
+
+        .btn-success:hover {
+            background-color: #218838;
+        }
+
+        .btn-link {
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        .btn-link:hover {
+            text-decoration: underline;
+        }
+
+        .ticket-table {
+            text-align: center;
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .ticket-table th, .ticket-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+
+        .ticket-table th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+
+        .ticket-status {
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            color: #fff;
+            text-transform: capitalize;
+            text-align: center;
+        }
+
+        .ticket-status.processing {
+            background-color: #1742b8;
+        }
+
+        .ticket-status.end {
+            background-color: #26a80c;
+        }
+
+        .ticket-status.rejected {
+            background-color: #ff2c07;
+        }
+
+        .ticket-actions {
+            display: flex;
+            gap: 1rem;
+            text-align: center;
+        }
+
+        .inline-form {
+            display: inline;
+        }
+    </style>
+</head>
+<body>
+    {% block content %}
+    <div class="container">
+        <nav>
+            <a href="{{ url_for('index') }}" class="btn btn-primary">Home</a> 
+            <a href="{{ url_for('logout') }}" class="btn btn-primary">Log Out</a>
+            <a href="{{ url_for('my_tickets') }}" class="btn btn-primary">View Your Tickets</a>
+            {% if current_user.username == "admin"%}
+                <a href="{{ url_for('all') }}" class="btn btn-primary">View All Tickets</a>
+            {% endif %}
+        </nav> <br>
+        <h3>Query Your Tickets</h3>
+        <form method="POST" action="{{ url_for('my_tickets') }}">
+            {{ form.hidden_tag() }}
+            <div class="form-group">
+                {{ form.status.label }}
+                {{ form.status(class="form-control") }}
+                {% for error in form.status.errors %}
+                    <span class="error">[{{ error }}]</span>
+                {% endfor %}
+            </div>
+            <div class="form-group">
+                {{ form.type.label }}
+                {{ form.type(class="form-control") }}
+                {% for error in form.type.errors %}
+                    <span class="error">[{{ error }}]</span>
+                {% endfor %}
+            </div>
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary">Search</button>
+            </div>
+        </form>
+
+        <h3>Your Tickets</h3>
+        <table class="ticket-table">
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Description</th>
+                    <th>File</th>
+                    <th>Sent by</th>
+                    <th>Sent to</th>
+                    <th>Status</th>
+                    <th>Last Udated</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ticket in tickets %}
+                    <tr>
+                        <td>{{ ticket.title }}</td>
+                        <td>{{ ticket.description }}</td>
+                        <td>
+                            {% if ticket.file_path %}
+                                <a href="{{ url_for('uploaded_file', filename=ticket.file_path) }}">Download File</a>
+                            {% endif %}
+                        </td>
+                        <td>{{ ticket.sender.username }}</td>
+                        <td>
+                            {% for recipient in recipient_usernames[ticket.id] %}
+                                {{ recipient }}{% if not loop.last %}, {% endif %}
+                            {% endfor %}
+                        </td>
+                        <td class="ticket-status {{ status[loop.index0] | lower }}">{{ status[loop.index0] }}</td>
+                        <td>{{ ticket.last_updated.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        <td class="ticket-actions">
+                            {% if user_recipient_status[loop.index0] and ticket.status not in [1, 2]%}
+                                <a href="{{ url_for('forward_ticket', ticket_id=ticket.id) }}" class="btn btn-link">Forward</a>
+                            {% endif %}
+                            {% if current_user.username == "admin" and ticket.status not in [1, 2]%}
+                                <form method="POST" action="{{ url_for('reject_ticket', ticket_id=ticket.id) }}" class="inline-form">
+                                    <button type="submit" class="btn btn-danger">Reject</button>
+                                </form>
+                            {% endif %}
+                            {% if current_user.username == "warehouse" and current_user.id == recipient_usernames[ticket.id][-1]  and ticket.status not in [1, 2]%}
+                                <form method="POST" action="{{ url_for('confirm', ticket_id=ticket.id) }}" class="inline-form">
+                                    <button type="submit" class="btn btn-success">Confirm</button>
+                                </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endblock %}
+</body>
+</html>
