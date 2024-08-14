@@ -16,7 +16,7 @@ class Ticket(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), nullable=False)
     description = db.Column(db.String(100), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)  # Sender
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False)  # Sender
     recipient_ids = db.Column(MutableList.as_mutable(JSON), nullable=False)
     status = db.Column(db.Integer, default=0)  # -1: Rejected, 0: Not checked, 1: Checked
     file_path = db.Column(db.String(200), nullable=True)  # Add this field to store file path
@@ -25,8 +25,8 @@ class Ticket(db.Model):
     recipients = db.relationship('User', secondary='ticket_recipient', backref='received_tickets')
 
 ticket_recipient = db.Table('ticket_recipient',
-    db.Column('ticket_id', db.Integer, db.ForeignKey('ticket.id'), primary_key=True),
-    db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True)
+    db.Column('ticket_id', db.Integer, db.ForeignKey('ticket.id', ondelete='CASCADE'), primary_key=True),
+    db.Column('user_id', db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), primary_key=True)
 )
 
 # Ensure to create migrations and apply them

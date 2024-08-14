@@ -18,7 +18,7 @@
         .container {
             flex: 1;
             padding: 2rem;
-            max-width: 800px;
+            max-width: 1000px;
             margin: 0 auto;
             background-color: #fff;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -40,7 +40,7 @@
             color: #555;
         }
 
-        .form-control {
+        .form-group .form-control {
             width: 100%;
             padding: 0.75rem;
             border: 1px solid #ccc;
@@ -48,7 +48,7 @@
             box-sizing: border-box;
         }
 
-        .error {
+        .form-group .error {
             color: red;
             font-size: 0.875rem;
         }
@@ -98,7 +98,6 @@
         }
 
         .ticket-table {
-            text-align: center;
             width: 100%;
             border-collapse: collapse;
             margin-top: 1rem;
@@ -137,8 +136,8 @@
 
         .ticket-actions {
             display: flex;
+            justify-content: center;
             gap: 1rem;
-            text-align: center;
         }
 
         .inline-form {
@@ -147,7 +146,6 @@
     </style>
 </head>
 <body>
-    {% block content %}
     <div class="container">
         <nav>
             <a href="{{ url_for('index') }}" class="btn btn-primary">Home</a> 
@@ -218,12 +216,16 @@
                                     <button type="submit" class="btn btn-success">Confirm</button>
                                 </form>
                             {% endif %}
+                            {% if current_user.username == "admin"%}
+                                <form method="DELETE" action="{{ url_for('remove_ticket', ticket_id=ticket.id) }}" class="inline-form">
+                                    <button type="submit" class="btn btn-danger">Remove</button>
+                                </form>
+                            {% endif %}
                         </td>
                     </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
-    {% endblock %}
 </body>
 </html>

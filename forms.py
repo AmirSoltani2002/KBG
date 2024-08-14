@@ -22,6 +22,10 @@ class LoginForm(FlaskForm):
     password = PasswordField('Password', validators=[DataRequired()])
     submit = SubmitField('Login')
 
+class RemoveUser(FlaskForm):
+    username = SelectField('Username', choices=[], coerce=int, validators=[DataRequired()])
+    submit = SubmitField('Remove')
+
 class MineForm(FlaskForm):
     type = SelectField('Sent/Received Tickets', validators=[DataRequired()])
     status = SelectField('Status', validators=[DataRequired()])

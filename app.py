@@ -5,7 +5,7 @@ from flask_login import LoginManager, login_user, logout_user, login_required, c
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from models import db, User, Ticket
-from forms import LoginForm, TicketForm, RegistrationForm, ForwardForm, MineForm, All
+from forms import LoginForm, TicketForm, RegistrationForm, ForwardForm, MineForm, All, RemoveUser
 from flask import flash
 import os
 from datetime import datetime
@@ -21,7 +21,12 @@ login_manager.login_view = 'login'
 
 UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'pdf'}
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+with app.app_context():
+    app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+    us = User.query.get(int(1))
+    print(us.username)
+    print(us.password)
+    print(us)
 
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
@@ -115,7 +120,11 @@ def admin():
     return render_template('admin.html')
 
 @app.route('/signup', methods=['GET', 'POST'])
+@login_required
 def signup():
+    if current_user.username != 'admin':
+        flash('Unauthorized action.', 'danger')
+        return redirect(url_for('index'))
     form = RegistrationForm()
     if form.validate_on_submit():
         hashed_password = generate_password_hash(form.password.data)
@@ -123,8 +132,29 @@ def signup():
         db.session.add(new_user)
         db.session.commit()
         flash('Your account has been created! You can now log in.', 'success')
-        return redirect(url_for('login'))
+        return redirect(url_for('index'))
     return render_template('signup.html', form=form)
+
+@app.route('/remove', methods=['GET', 'POST'])
+@login_required
+def remove_user():
+    if current_user.username != 'admin':
+        flash('Unauthorized action.', 'danger')
+        return redirect(url_for('index'))
+    form = RemoveUser()
+    form.username.choices = [(user.id, user.username) for user in User.query.all() if (user.id != current_user.id)]
+    print(form.username.choices)
+    if form.validate_on_submit():
+        user = User.query.filter(
+            User.id == form.username.data).first()
+        if user and form.username.data != "admin":
+            db.session.delete(user)
+            db.session.commit()
+            flash(f'You removed username of {form.username}', 'success')
+        else:
+            flash(f'No user with username of {form.username} or you cannot remove yourself', 'failure')
+        return redirect(url_for('index'))
+    return render_template('remove_user.html', form=form)
 
 @app.route('/forward_ticket/<int:ticket_id>', methods=['GET', 'POST'])
 @login_required
@@ -242,6 +272,19 @@ def my_tickets():
 
     return render_template('mine.html', form=form)
 
+@app.route('/delete/<int:ticket_id>', methods=['DELETE', 'GET'])
+@login_required
+def remove_ticket(ticket_id):
+    if current_user.username != 'admin':
+        flash('Unathorized user', 'danger')
+        return
+    else:
+        ticket = Ticket.query.filter(
+            Ticket.id == ticket_id).first()
+        db.session.delete(ticket)
+        db.session.commit()
+        return redirect(url_for('all'))
+
 @app.route('/my_tickets/<string:ticket_type>/<int:status>', methods=['GET'])
 @login_required
 def my_tickets_2(ticket_type, status):
@@ -275,4 +318,4 @@ def my_tickets_2(ticket_type, status):
     return render_template('mine.html', tickets=tickets, user_recipient_status=user_recipient_status, 
                            status=status_texts, recipient_usernames=recipient_usernames, form=form)
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=True)
+    app.run(host='0.0.0.0', debug = False, port = 8000)
