@@ -237,7 +237,7 @@
                                     <button type="submit" class="btn btn-danger">Reject</button>
                                 </form>
                             {% endif %}
-                            {% if current_user.username == "warehouse" and ticket.status not in [1, 2] and current_user.id == recipient_usernames[ticket.id][-1]%}
+                            {% if current_user.username == "warehouse" and ticket.status not in [1, 2] and current_user.username == recipient_usernames[ticket.id][-1]%}
                                 <form method="POST" action="{{ url_for('confirm', ticket_id=ticket.id) }}" class="inline-form">
                                     <button type="submit" class="btn btn-success">Confirm</button>
                                 </form>
