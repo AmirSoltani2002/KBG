@@ -167,12 +167,14 @@ def forward_ticket(ticket_id):
         ticket.recipient_ids.append(new_recipient_id)
         
         if form.description.data and current_user.username == 'admin' and not form.file.data:
-            ticket.description = form.description.data
-            file_path = os.path.join(app.config['UPLOAD_FOLDER'], ticket.description)
+            filename = secure_filename(form.description.data + '.pdf')
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             if os.path.exists(file_path):
                 flash('File already exists!', 'danger')
                 return redirect(url_for('forward_ticket', ticket_id = ticket_id))
+            ticket.description = form.description.data
             prev_name = os.path.join(app.config['UPLOAD_FOLDER'], ticket.file_path)
+            ticket.file_path = filename
             os.rename(prev_name, file_path)
         
         if form.file.data and current_user.username == 'admin':
@@ -276,6 +278,9 @@ def remove_ticket(ticket_id):
     else:
         ticket = Ticket.query.filter(
             Ticket.id == ticket_id).first()
+        file_name = ticket.file_path
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], file_name)
+        os.remove(file_path)
         db.session.delete(ticket)
         db.session.commit()
         return redirect(url_for('all'))
@@ -313,4 +318,4 @@ def my_tickets_2(ticket_type, status):
     return render_template('mine.html', tickets=tickets, user_recipient_status=user_recipient_status, 
                            status=status_texts, recipient_usernames=recipient_usernames, form=form)
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug = False, port = 8000)
+    app.run(host='0.0.0.0', debug = True, port = 8000)

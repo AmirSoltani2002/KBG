@@ -49,7 +49,7 @@ class TicketForm(FlaskForm):
     title = StringField('Title', validators=[DataRequired()])
     description = StringField('File Name', validators=[DataRequired()])
     recipient = SelectField('Recipient', choices=[], coerce=int, validators=[DataRequired()])
-    file = FileField('Upload PDF')
+    file = FileField('Upload PDF', validators=[DataRequired()])
     submit = SubmitField('Send Ticket')
 
     def __init__(self, *args, **kwargs):
