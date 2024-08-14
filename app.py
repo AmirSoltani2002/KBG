@@ -21,12 +21,6 @@ login_manager.login_view = 'login'
 
 UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'pdf'}
-with app.app_context():
-    app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-    us = User.query.get(int(1))
-    print(us.username)
-    print(us.password)
-    print(us)
 
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
