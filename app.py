@@ -339,7 +339,7 @@ def translate():
 
     source = 'en' if target == 'fa' else 'fa'
     translated = GoogleTranslator(source=source, target=target).translate(text)
-    return jsonify({"translated_text": translated})
+    return translated
 
 
 # Fetch YouTube links (Asynchronous)
@@ -377,7 +377,7 @@ def youtube():
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     results = loop.run_until_complete(fetch_youtube_links())
-    return jsonify({"youtube_links": results})
+    return results
 
 
 # Chat with LLM (Asynchronous)
@@ -404,7 +404,7 @@ def duck_chat():
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     chat_result = loop.run_until_complete(fetch_chat_response())
-    return jsonify({"response": chat_result})
+    return chat_result
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug = True, port = 8000)
