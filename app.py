@@ -1,5 +1,5 @@
 # app.py
-from flask import Flask, render_template, redirect, url_for, request, send_from_directory
+from flask import Flask, render_template, redirect, url_for, request, send_from_directory, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -9,6 +9,12 @@ from forms import LoginForm, TicketForm, RegistrationForm, ForwardForm, MineForm
 from flask import flash
 import os
 from datetime import datetime
+import requests
+from deep_translator import GoogleTranslator
+from duck_chat import DuckChat
+from duck_chat.models.model_type import ModelType
+import aiohttp
+import asyncio
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key'
@@ -317,5 +323,88 @@ def my_tickets_2(ticket_type, status):
 
     return render_template('mine.html', tickets=tickets, user_recipient_status=user_recipient_status, 
                            status=status_texts, recipient_usernames=recipient_usernames, form=form)
+
+# Tokens and API keys
+os.environ['translation_token'] = '919765:66d7599c6ff3c'
+os.environ['youtube_apikey'] = 'AIzaSyAa02NvRyMf6WnlH276b90yRQGmGR1wf3c'
+
+# Translate from/to Persian to/from English
+@app.route("/translate/", methods=["GET"])
+def translate():
+    text = request.args.get('text')
+    target = request.args.get('target', 'fa')
+    
+    if not text:
+        return jsonify({"error": "Missing 'text' parameter"}), 400
+
+    source = 'en' if target == 'fa' else 'fa'
+    translated = GoogleTranslator(source=source, target=target).translate(text)
+    return jsonify({"translated_text": translated})
+
+
+# Fetch YouTube links (Asynchronous)
+@app.route("/youtube/", methods=["GET"])
+def youtube():
+    search_query = request.args.get('search_query')
+    result_num = int(request.args.get('result_num', 2))
+    type_ = int(request.args.get('type', 0))
+
+    if not search_query:
+        return jsonify({"error": "Missing 'search_query' parameter"}), 400
+
+    API_KEY = os.getenv('youtube_apikey')
+    base_url = f'https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults={result_num}&q={search_query}&videoDuration=short&key={API_KEY}&type=video'
+    
+    # Modify URL for video category
+    if type_ == 10:
+        url = f'{base_url}&videoCategoryId=10'
+    elif type_ == 1:
+        url = f'{base_url}&videoCategoryId=1'
+    else:
+        url = base_url
+    
+    # Make the asynchronous request using aiohttp
+    async def fetch_youtube_links():
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as response:
+                data = await response.json()
+                results = [
+                    f"https://www.youtube.com/watch?v={item['id']['videoId']}"
+                    for item in data['items']
+                ]
+                return results
+
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    results = loop.run_until_complete(fetch_youtube_links())
+    return jsonify({"youtube_links": results})
+
+
+# Chat with LLM (Asynchronous)
+@app.route("/chat/", methods=["GET"])
+def duck_chat():
+    input_text = request.args.get('input')
+    model = request.args.get('model', 'gpt')
+
+    if not input_text:
+        return jsonify({"error": "Missing 'input' parameter"}), 400
+
+    model_types = {
+        'gpt': ModelType.GPT4o,
+        'claude': ModelType.Claude,
+        'llama': ModelType.Llama,
+        'mixtral': ModelType.Mixtral,
+    }
+    
+    async def fetch_chat_response():
+        async with DuckChat(model=model_types[model]) as chat:
+            result = await chat.ask_question(input_text)
+        return result
+
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    chat_result = loop.run_until_complete(fetch_chat_response())
+    return jsonify({"response": chat_result})
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug = True, port = 8000)
