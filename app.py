@@ -433,7 +433,7 @@ def movie_search():
         url_keywords = f"https://api.themoviedb.org/3/search/keyword?api_key={key}&query={query}"
         try:
             response = requests.get(url_keywords, headers=headers).json()
-        except  ssl.SSLError as e:
+        except Exception as e:
             print('Error in connecting to the TMDB server')
 
         total_pages = response['total_pages']
