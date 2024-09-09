@@ -409,47 +409,52 @@ def duck_chat():
     return chat_result
 
 @app.route("/movie/", methods=["GET"])
-def movie_search(queries):
+def movie_search():
     """
         key_word: key_word to search on TMBD API
     """
+    key = os.getenv('TMDB')
     queries = request.args.getlist('query')
     keywords = []
     results = []
     pop = []
     headers = {"accept": "application/json"}
-    def find_movies(key_word):
-        url_results = f'https://api.themoviedb.org/3/discover/movie?&page=1&api_key={key}&with_keywords={key_word}&sort_by=popularity.desc&primary_release_date.lte=2024-09-01'
+    def find_movies(key_word, page):
+        url_results = f'https://api.themoviedb.org/3/discover/movie?&page={page}&api_key={key}&with_keywords={key_word}&sort_by=popularity.desc&primary_release_date.lte=2024-09-01'
         response = requests.get(url_results, headers=headers).json()
         return response
     
+    #print(queries)
+    dic_movie = {}
     for query in queries:
         results_temp = []
-        pop_temp = []
         keywords = []
         url_keywords = f"https://api.themoviedb.org/3/search/keyword?api_key={key}&query={query}"
         response = requests.get(url_keywords, headers=headers).json()
+        total_pages = response['total_pages']
         for id in response['results']:
             keywords.append(id['id'])
-        if len(keywords) > 2:
-            keywords = keywords[:2]
+        if len(keywords) > 10:
+            keywords = keywords[:10]
         for r in keywords:
-            temp = find_movies(r)['results']
-            for i in temp:
-                results_temp.append(i['original_title'])
-                pop_temp.append(i['popularity'])
+            end = False
+            for i in range(1, int(total_pages)+1):
+                temp = find_movies(r, page=i)['results']
+                for mov in temp:
+                    if mov['popularity'] < 30:
+                        end = True
+                        break
+                    results_temp.append(mov['original_title'])
+                    dic_movie[mov['original_title']] = mov['popularity']
+                if end:
+                    break
         results_temp = list(set(results_temp))
-        pop_temp = list(set(pop_temp))
         results += results_temp
-        pop += pop_temp
-    dic_movie = {j: i for i, j in zip(pop, results)}
     counter = Counter(results)
     max_count = max(counter.values())
-    print(max_count)
     max_keys = [key for key, count in counter.items() if count == max_count]
-    best = [dic_movie[name] for name in max_keys]
-    sorted_zip = sorted(zip(best, max_keys), reverse=True)
-    sorted_array = [x for _, x in sorted_zip]
+    sorted_zip = {key: dic_movie[key] for key in max_keys}
+    sorted_array = sorted(sorted_zip, key = sorted_zip.get, reverse=True)
     if len(sorted_array) >=3:
         sorted_array = sorted_array[:3]
     return random.choice(sorted_array)
