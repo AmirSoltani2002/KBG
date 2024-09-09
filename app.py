@@ -326,7 +326,7 @@ def my_tickets_2(ticket_type, status):
 
 # Tokens and API keys
 os.environ['translation_token'] = '919765:66d7599c6ff3c'
-os.environ['youtube_apikey'] = 'AIzaSyAa02NvRyMf6WnlH276b90yRQGmGR1wf3c'
+os.environ['youtube_apikey'] = 'AIzaSyA_n0dei0p18IsuPAs3hmdSpEIksG_-JZY'
 
 # Translate from/to Persian to/from English
 @app.route("/translate/", methods=["GET"])
@@ -407,4 +407,4 @@ def duck_chat():
     return chat_result
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug = True, port = 8000)
+    app.run(host='0.0.0.0', debug = True, port = 8888)
