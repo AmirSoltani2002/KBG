@@ -434,14 +434,14 @@ def movie_search():
         total_pages = response['total_pages']
         for id in response['results']:
             keywords.append(id['id'])
-        if len(keywords) > 10:
-            keywords = keywords[:10]
+        if len(keywords) > 5:
+            keywords = keywords[:5]
         for r in keywords:
             end = False
             for i in range(1, int(total_pages)+1):
                 temp = find_movies(r, page=i)['results']
                 for mov in temp:
-                    if mov['popularity'] < 30:
+                    if mov['popularity'] < 10:
                         end = True
                         break
                     results_temp.append(mov['original_title'])
