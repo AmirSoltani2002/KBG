@@ -409,12 +409,11 @@ def duck_chat():
     return chat_result
 
 @app.route("/movie/", methods=["GET"])
-def movie_search():
+def movie_search(queries):
     """
         key_word: key_word to search on TMBD API
     """
     queries = request.args.getlist('query')
-    key = os.getenv('TMDB')
     keywords = []
     results = []
     pop = []
@@ -430,7 +429,6 @@ def movie_search():
         keywords = []
         url_keywords = f"https://api.themoviedb.org/3/search/keyword?api_key={key}&query={query}"
         response = requests.get(url_keywords, headers=headers).json()
-        print(response)
         for id in response['results']:
             keywords.append(id['id'])
         if len(keywords) > 2:
