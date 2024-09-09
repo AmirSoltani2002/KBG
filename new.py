@@ -9,8 +9,13 @@ from collections import Counter
 import random
 import requests
 import ssl
+import os
+import asyncio
+import aiohttp
 
 key = '5fbe07b236e55c0d017aa5592a047478'
+os.environ['translation_token'] = '919765:66d7599c6ff3c'
+os.environ['youtube_apikey'] = 'AIzaSyA_n0dei0p18IsuPAs3hmdSpEIksG_-JZY'
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key'
@@ -25,6 +30,7 @@ UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'pdf'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
+
 @app.route("/movie/", methods=["GET"])
 def movie_search():
     """
@@ -33,10 +39,15 @@ def movie_search():
     queries = request.args.getlist('query')
     keywords = []
     results = []
+    pop = []
     headers = {"accept": "application/json"}
     def find_movies(key_word, page):
         url_results = f'https://api.themoviedb.org/3/discover/movie?&page={page}&api_key={key}&with_keywords={key_word}&sort_by=popularity.desc&primary_release_date.lte=2024-09-01'
-        response = requests.get(url_results, headers=headers).json()
+        try:
+            response = requests.get(url_results, headers=headers).json()
+        except Exception as e:
+            print('Error in connecting to the TMDB server')
+            return None
         return response
     
     #print(queries)
@@ -47,9 +58,12 @@ def movie_search():
         url_keywords = f"https://api.themoviedb.org/3/search/keyword?api_key={key}&query={query}"
         try:
             response = requests.get(url_keywords, headers=headers).json()
-        except ssl.SSLError as e:
+            if response == None:
+                continue
+        except Exception as e:
             print('Error in connecting to the TMDB server')
-            raise
+            continue
+        print(response)
         total_pages = response['total_pages']
         for id in response['results']:
             keywords.append(id['id'])
@@ -77,6 +91,53 @@ def movie_search():
     if len(sorted_array) >=3:
         sorted_array = sorted_array[:3]
     return random.choice(sorted_array)
+
+# Fetch YouTube links (Asynchronous)
+@app.route("/youtube/", methods=["GET"])
+def youtube():
+    search_query = request.args.get('search_query')
+    length = request.args.get('length', 'both')
+    result_num = int(request.args.get('result_num', 1))
+    type_ = int(request.args.get('type', 0))
+
+    if not search_query:
+        return jsonify({"error": "Missing 'search_query' parameter"}), 400
+
+    API_KEY = os.getenv('youtube_apikey')
+    def fetch(duration):
+        base_url = f'https://www.googleapis.com/youtube/v3/search?part=snippet&videoDuration={duration}&maxResults={result_num}&q={search_query}&key={API_KEY}&type=video'
+        
+        # Modify URL for video category
+        if type_ == 10:
+            url = f'{base_url}&videoCategoryId=10'
+        elif type_ == 1:
+            url = f'{base_url}&videoCategoryId=1'
+        else:
+            url = base_url
+        return url
+    
+    # Make the asynchronous request using aiohttp
+    async def fetch_youtube_links(url):
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as response:
+                data = await response.json()
+                print(data)
+                results = [
+                    f"https://www.youtube.com/watch?v={item['id']['videoId']}"
+                    for item in data['items']
+                ]
+                return results
+
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    results = []
+    if length == 'both':
+        lens = ['short', 'medium']
+    else:
+        lens = [length]
+    for lenth in lens:
+        results += loop.run_until_complete(fetch_youtube_links(fetch(lenth)))
+    return results
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug = True, port = 8888)
