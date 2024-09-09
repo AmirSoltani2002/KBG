@@ -15,6 +15,8 @@ from duck_chat import DuckChat
 from duck_chat.models.model_type import ModelType
 import aiohttp
 import asyncio
+from collections import Counter
+import random
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key'
@@ -327,7 +329,7 @@ def my_tickets_2(ticket_type, status):
 # Tokens and API keys
 os.environ['translation_token'] = '919765:66d7599c6ff3c'
 os.environ['youtube_apikey'] = 'AIzaSyA_n0dei0p18IsuPAs3hmdSpEIksG_-JZY'
-
+os.environ['TMDB'] = "5fbe07b236e55c0d017aa5592a047478"
 # Translate from/to Persian to/from English
 @app.route("/translate/", methods=["GET"])
 def translate():
@@ -405,6 +407,54 @@ def duck_chat():
     asyncio.set_event_loop(loop)
     chat_result = loop.run_until_complete(fetch_chat_response())
     return chat_result
+
+@app.route("/movie/", methods=["GET"])
+def movie_search():
+    """
+        key_word: key_word to search on TMBD API
+    """
+    queries = request.args.getlist('query')
+    key = os.getenv('TMDB')
+    keywords = []
+    results = []
+    pop = []
+    headers = {"accept": "application/json"}
+    def find_movies(key_word):
+        url_results = f'https://api.themoviedb.org/3/discover/movie?&page=1&api_key={key}&with_keywords={key_word}&sort_by=popularity.desc&primary_release_date.lte=2024-09-01'
+        response = requests.get(url_results, headers=headers).json()
+        return response
+    
+    for query in queries:
+        results_temp = []
+        pop_temp = []
+        keywords = []
+        url_keywords = f"https://api.themoviedb.org/3/search/keyword?api_key={key}&query={query}"
+        response = requests.get(url_keywords, headers=headers).json()
+        print(response)
+        for id in response['results']:
+            keywords.append(id['id'])
+        if len(keywords) > 2:
+            keywords = keywords[:2]
+        for r in keywords:
+            temp = find_movies(r)['results']
+            for i in temp:
+                results_temp.append(i['original_title'])
+                pop_temp.append(i['popularity'])
+        results_temp = list(set(results_temp))
+        pop_temp = list(set(pop_temp))
+        results += results_temp
+        pop += pop_temp
+    dic_movie = {j: i for i, j in zip(pop, results)}
+    counter = Counter(results)
+    max_count = max(counter.values())
+    print(max_count)
+    max_keys = [key for key, count in counter.items() if count == max_count]
+    best = [dic_movie[name] for name in max_keys]
+    sorted_zip = sorted(zip(best, max_keys), reverse=True)
+    sorted_array = [x for _, x in sorted_zip]
+    if len(sorted_array) >=3:
+        sorted_array = sorted_array[:3]
+    return random.choice(sorted_array)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug = True, port = 8888)
