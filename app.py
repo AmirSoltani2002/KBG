@@ -17,6 +17,7 @@ import aiohttp
 import asyncio
 from collections import Counter
 import random
+import ssl
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key'
@@ -355,7 +356,7 @@ def youtube():
         return jsonify({"error": "Missing 'search_query' parameter"}), 400
 
     API_KEY = os.getenv('youtube_apikey')
-    base_url = f'https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults={result_num}&q={search_query}&videoDuration=short&key={API_KEY}&type=video'
+    base_url = f'https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults={result_num}&q={search_query}&key={API_KEY}&type=video'
     
     # Modify URL for video category
     if type_ == 10:
@@ -430,7 +431,11 @@ def movie_search():
         results_temp = []
         keywords = []
         url_keywords = f"https://api.themoviedb.org/3/search/keyword?api_key={key}&query={query}"
-        response = requests.get(url_keywords, headers=headers).json()
+        try:
+            response = requests.get(url_keywords, headers=headers).json()
+        except  ssl.SSLError as e:
+            print('Error in connecting to the TMDB server')
+
         total_pages = response['total_pages']
         for id in response['results']:
             keywords.append(id['id'])
