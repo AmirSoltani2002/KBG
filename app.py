@@ -412,7 +412,7 @@ def duck_chat():
     chat_result = loop.run_until_complete(fetch_chat_response())
     return chat_result
 
-@app.route("/movie/", methods=["GET"])
+@app.route("/music/", methods=["GET"])
 def music():
     query = request.args.get('query')
     ACCESS_TOKEN = os.getenv('Genius')
