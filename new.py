@@ -62,19 +62,20 @@ def movie_search():
                 continue
         except Exception as e:
             print('Error in connecting to the TMDB server')
+            print(e)
             continue
-        print(response)
+
         total_pages = response['total_pages']
         for id in response['results']:
             keywords.append(id['id'])
-        if len(keywords) > 5:
-            keywords = keywords[:5]
+        if len(keywords) > 2:
+            keywords = keywords[:2]
         for r in keywords:
             end = False
             for i in range(1, int(total_pages)+1):
                 temp = find_movies(r, page=i)['results']
                 for mov in temp:
-                    if mov['popularity'] < 10:
+                    if mov['popularity'] < 50:
                         end = True
                         break
                     results_temp.append(mov['original_title'])

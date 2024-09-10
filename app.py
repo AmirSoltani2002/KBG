@@ -426,7 +426,8 @@ def movie_search():
             response = requests.get(url_results, headers=headers).json()
         except Exception as e:
             print('Error in connecting to the TMDB server')
-            return None
+            #return None
+            raise e
         return response
     
     #print(queries)
@@ -437,12 +438,12 @@ def movie_search():
         url_keywords = f"https://api.themoviedb.org/3/search/keyword?api_key={key}&query={query}"
         try:
             response = requests.get(url_keywords, headers=headers).json()
-            if response == None:
-                continue
+            # if response == None:
+            #     continue
         except Exception as e:
             print('Error in connecting to the TMDB server')
-            print(e)
-            continue
+            #continue
+            raise e
 
         total_pages = response['total_pages']
         for id in response['results']:
