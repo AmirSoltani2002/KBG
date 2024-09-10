@@ -425,7 +425,7 @@ def movie_search():
         url_results = f'https://api.themoviedb.org/3/discover/movie?&page={page}&api_key={key}&with_keywords={key_word}&sort_by=popularity.desc&primary_release_date.lte=2024-09-01'
         try:
             session = requests.Session()
-            retry = Retry(connect=3, backoff_factor=0.5)
+            retry = Retry(connect=10, backoff_factor=0.5)
             adapter = HTTPAdapter(max_retries=retry)
             session.mount('http://', adapter)
             session.mount('https://', adapter)
@@ -444,7 +444,7 @@ def movie_search():
         url_keywords = f"https://api.themoviedb.org/3/search/keyword?api_key={key}&query={query}"
         try:
             session = requests.Session()
-            retry = Retry(connect=4, backoff_factor=0.5)
+            retry = Retry(connect=10, backoff_factor=0.5)
             adapter = HTTPAdapter(max_retries=retry)
             session.mount('http://', adapter)
             session.mount('https://', adapter)
