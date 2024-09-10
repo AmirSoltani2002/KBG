@@ -8,7 +8,8 @@ from models import db
 from collections import Counter
 import random
 import requests
-import ssl
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 import os
 import asyncio
 import aiohttp
@@ -44,10 +45,16 @@ def movie_search():
     def find_movies(key_word, page):
         url_results = f'https://api.themoviedb.org/3/discover/movie?&page={page}&api_key={key}&with_keywords={key_word}&sort_by=popularity.desc&primary_release_date.lte=2024-09-01'
         try:
-            response = requests.get(url_results, headers=headers).json()
+            session = requests.Session()
+            retry = Retry(connect=3, backoff_factor=0.5)
+            adapter = HTTPAdapter(max_retries=retry)
+            session.mount('http://', adapter)
+            session.mount('https://', adapter)
+            response = session.get(url_results, headers=headers).json()
         except Exception as e:
             print('Error in connecting to the TMDB server')
-            return None
+            #return None
+            raise e
         return response
     
     #print(queries)
@@ -57,13 +64,18 @@ def movie_search():
         keywords = []
         url_keywords = f"https://api.themoviedb.org/3/search/keyword?api_key={key}&query={query}"
         try:
-            response = requests.get(url_keywords, headers=headers).json()
-            if response == None:
-                continue
+            session = requests.Session()
+            retry = Retry(connect=3, backoff_factor=0.5)
+            adapter = HTTPAdapter(max_retries=retry)
+            session.mount('http://', adapter)
+            session.mount('https://', adapter)
+            response = session.get(url_keywords, headers=headers).json()
+            # if response == None:
+            #     continue
         except Exception as e:
             print('Error in connecting to the TMDB server')
-            print(e)
-            continue
+            #continue
+            raise e
 
         total_pages = response['total_pages']
         for id in response['results']:
