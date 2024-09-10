@@ -444,7 +444,7 @@ def movie_search():
         url_keywords = f"https://api.themoviedb.org/3/search/keyword?api_key={key}&query={query}"
         try:
             session = requests.Session()
-            retry = Retry(connect=3, backoff_factor=0.5)
+            retry = Retry(connect=4, backoff_factor=0.5)
             adapter = HTTPAdapter(max_retries=retry)
             session.mount('http://', adapter)
             session.mount('https://', adapter)
@@ -459,14 +459,14 @@ def movie_search():
         total_pages = response['total_pages']
         for id in response['results']:
             keywords.append(id['id'])
-        if len(keywords) > 2:
-            keywords = keywords[:2]
+        if len(keywords) > 10:
+            keywords = keywords[:10]
         for r in keywords:
             end = False
             for i in range(1, int(total_pages)+1):
                 temp = find_movies(r, page=i)['results']
                 for mov in temp:
-                    if mov['popularity'] < 50:
+                    if mov['popularity'] < 10:
                         end = True
                         break
                     results_temp.append(mov['original_title'])
