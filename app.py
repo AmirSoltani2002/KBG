@@ -19,6 +19,7 @@ from collections import Counter
 import random
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
+from time import sleep
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key'
@@ -430,6 +431,7 @@ def movie_search():
             session.mount('http://', adapter)
             session.mount('https://', adapter)
             response = session.get(url_results, headers=headers).json()
+            sleep(0.02)
         except Exception as e:
             print('Error in connecting to the TMDB server')
             #return None
