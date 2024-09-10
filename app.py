@@ -433,7 +433,7 @@ def movie_search():
         except Exception as e:
             print('Error in connecting to the TMDB server')
             #return None
-            raise e
+            return e
         return response
     
     #print(queries)
@@ -454,7 +454,7 @@ def movie_search():
         except Exception as e:
             print('Error in connecting to the TMDB server')
             #continue
-            raise e
+            return e
 
         total_pages = response['total_pages']
         for id in response['results']:
