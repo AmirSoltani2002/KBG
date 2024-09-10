@@ -497,7 +497,7 @@ def movie_search():
                     break
         results_temp = list(set(results_temp))
         results += results_temp
-        sleep(0.5)
+        sleep(0.4)
     counter = Counter(results)
     max_count = max(counter.values())
     max_keys = [key for key, count in counter.items() if count == max_count]
