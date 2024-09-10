@@ -431,7 +431,6 @@ def movie_search():
             session.mount('http://', adapter)
             session.mount('https://', adapter)
             response = session.get(url_results, headers=headers).json()
-            sleep(0.02)
         except Exception as e:
             print('Error in connecting to the TMDB server')
             #return None
@@ -461,14 +460,14 @@ def movie_search():
         total_pages = response['total_pages']
         for id in response['results']:
             keywords.append(id['id'])
-        if len(keywords) > 7:
-            keywords = keywords[:7]
+        if len(keywords) > 10:
+            keywords = keywords[:10]
         for r in keywords:
             end = False
             for i in range(1, int(total_pages)+1):
                 temp = find_movies(r, page=i)['results']
                 for mov in temp:
-                    if mov['popularity'] < 30:
+                    if mov['popularity'] < 50:
                         end = True
                         break
                     results_temp.append(mov['original_title'])
@@ -477,6 +476,7 @@ def movie_search():
                     break
         results_temp = list(set(results_temp))
         results += results_temp
+        sleep(0.5)
     counter = Counter(results)
     max_count = max(counter.values())
     max_keys = [key for key, count in counter.items() if count == max_count]
