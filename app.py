@@ -467,7 +467,7 @@ def movie_search():
             for i in range(1, int(total_pages)+1):
                 temp = find_movies(r, page=i)['results']
                 for mov in temp:
-                    if mov['popularity'] < 50:
+                    if mov['popularity'] < 20:
                         end = True
                         break
                     results_temp.append(mov['original_title'])
