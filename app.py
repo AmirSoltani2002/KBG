@@ -333,6 +333,7 @@ def my_tickets_2(ticket_type, status):
 os.environ['translation_token'] = '919765:66d7599c6ff3c'
 os.environ['youtube_apikey'] = 'AIzaSyA_n0dei0p18IsuPAs3hmdSpEIksG_-JZY'
 os.environ['TMDB'] = "5fbe07b236e55c0d017aa5592a047478"
+os.environ['Genius'] = 'j4sJexe8H9ylVoCNzTJVdgXO1Aax0eDARGEdJ4syxjRjk7BTciaWr6Eq1NWDZzm6'
 # Translate from/to Persian to/from English
 @app.route("/translate/", methods=["GET"])
 def translate():
@@ -410,6 +411,26 @@ def duck_chat():
     asyncio.set_event_loop(loop)
     chat_result = loop.run_until_complete(fetch_chat_response())
     return chat_result
+
+@app.route("/movie/", methods=["GET"])
+def music():
+    query = request.args.get('query')
+    ACCESS_TOKEN = os.getenv('Genius')
+    BASE_URL = 'https://api.genius.com'
+    headers = {
+        'Authorization': f'Bearer {ACCESS_TOKEN}'
+    }
+    params = {
+        'q': query
+    }
+    response = requests.get(f'{BASE_URL}/search', headers=headers, params=params)
+    results = response.json()
+    if len(results['response']['hits']) >= 3:
+        return random.choice([results['response']['hits'][i]['result']['full_title'] for i in range(3)])
+    elif len(results['response']['hits']) > 0:
+        return random.choice([results['response']['hits'][i]['result']['full_title'] for i in range(len(results['response']['hits']))])
+    else:
+        return []
 
 @app.route("/movie/", methods=["GET"])
 def movie_search():
